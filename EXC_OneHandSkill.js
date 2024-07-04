@@ -65,8 +65,8 @@ const EXCOneHandSkill = document.currentScript.src.match(/^.*\/(.+)\.js$/)[1];
 	//--------------------------------------------------
 	// 変数宣言
 	//--------------------------------------------------
-	let removeSlot = -1;	// 外す武器スロット番号
-	let equipedId = -1;		// 外した武器のIDを保持、スキル使用後に再装備
+	let _removeSlot = -1;	// 外す武器スロット番号
+	let _equipedId = -1;		// 外した武器のIDを保持、スキル使用後に再装備
 
 	//--------------------------------------------------
 	// Window_BattleLog のオーバーライド
@@ -75,7 +75,7 @@ const EXCOneHandSkill = document.currentScript.src.match(/^.*\/(.+)\.js$/)[1];
 	const _EXC_Window_BattleLog_showActorAttackAnimation = Window_BattleLog.prototype.showActorAttackAnimation;
 	Window_BattleLog.prototype.showActorAttackAnimation = function(subject, targets) {
 		// 右手装備を外している場合（左手装備のみ参照）
-		if(removeSlot == _rightSlot){
+		if(_removeSlot == _rightSlot){
 			this.showNormalAnimation(targets, subject.attackAnimationId1(), true);	//反転してアニメーション表示
 		} else {
 			// 通常処理
@@ -90,29 +90,30 @@ const EXCOneHandSkill = document.currentScript.src.match(/^.*\/(.+)\.js$/)[1];
 		// アクターかつ二刀流の場合に片手外し処理
 		if(subject.constructor.name == "Game_Actor" && subject.isDualWield()){
 			// すでに外した装備がある場合は再装備
-			if(equipedId >= 0){
-				subject.changeEquipById(removeSlot,equipedId);
-				// リセット
-				equipedId = -1;
-				removeSlot = -1;
+			if(_equipedId >= 0){
+				subject.changeEquipById(_removeSlot,_equipedId);
 			}
+			
+			// リセット
+			_equipedId = -1;
+			_removeSlot = -1;
 
 			// スキルにタグが設定されている場合処理
 			const tempTag = $dataSkills[action._item._itemId].meta[ONE_HAND_TAG];
 			if(tempTag){
-				removeSlot = -1;
+				_removeSlot = -1;
 				// 外す対象の設定
 				if(tempTag == RIGHT_SET){
-					removeSlot = _leftSlot;
+					_removeSlot = _leftSlot;
 				}else if(tempTag == LEFT_SET){
-					removeSlot = _rightSlot;
+					_removeSlot = _rightSlot;
 				}
 				
 				// タグ指定に誤りがなく、外す対象が装備されている場合外す処理
 				// 装備スロット番号と装備のインデックスはずれるので注意
-				if(removeSlot > 0 && subject.equips()[removeSlot - 1] != null){
-					equipedId = subject.equips()[removeSlot - 1].id;
-					subject.changeEquip(removeSlot - 1, null);
+				if(_removeSlot > 0 && subject.equips()[_removeSlot - 1] != null){
+					_equipedId = subject.equips()[_removeSlot - 1].id;
+					subject.changeEquip(_removeSlot - 1, null);
 				}
 			}
 
@@ -127,12 +128,12 @@ const EXCOneHandSkill = document.currentScript.src.match(/^.*\/(.+)\.js$/)[1];
 	Window_BattleLog.prototype.endAction = function(subject) {
 		_EXC_Window_BattleLog_endAction.call(this,...arguments);
 		// 処理後に外している装備があれば再装備
-		if(equipedId >= 0){
-			subject.changeEquipById(removeSlot, equipedId);
-			// リセット
-			equipedId = -1;
-			removeSlot = -1;
+		if(_equipedId >= 0){
+			subject.changeEquipById(_removeSlot, _equipedId);
 		}
+		// リセット
+		_equipedId = -1;
+		_removeSlot = -1;
 	};
 
 })();
